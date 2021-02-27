@@ -1,0 +1,82 @@
+<!--
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) Autodesk, Inc. All rights reserved
+// Written by Toshiaki Isezaki 2019 - Forge Partner Development
+//
+// Permission to use, copy, modify, and distribute this software in
+// object code form for any purpose and without fee is hereby granted,
+// provided that the above copyright notice appears in all copies and
+// that both that copyright notice and the limited warranty and
+// restricted rights notice below appear in all supporting
+// documentation.
+//
+// AUTODESK PROVIDES THIS PROGRAM "AS IS" AND WITH ALL FAULTS.
+// AUTODESK SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTY OF
+// MERCHANTABILITY OR FITNESS FOR A PARTICULAR USE.  AUTODESK, INC.
+// DOES NOT WARRANT THAT THE OPERATION OF THE PROGRAM WILL BE
+// UNINTERRUPTED OR ERROR FREE.
+////////////////////////////////////////////////////////////////////////////////
+-->
+<html>
+<head>
+    <title>Forge Viewer</title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.min.css" type="text/css">
+    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js" type="text/javascript"></script>
+    <script src="https://code.jquery.com/jquery-2.1.2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+
+            // Intialize Viewer
+            var options = {
+                env: 'AutodeskProduction',
+                api: 'derivativeV2',  // for models uploaded to EMEA change this option to 'derivativeV2_EU'
+                language: 'ja',
+                getAccessToken: function (onTokenReady) {
+                    var token = Autodesk.Viewing.Private.getParameterByName("accessToken");
+                    var timeInSeconds = 3600; // Use value provided by Forge Authentication (OAuth) API
+                    onTokenReady(token, timeInSeconds);
+                }
+            };
+
+            Autodesk.Viewing.Initializer(options, function () {
+
+                _viewer = new Autodesk.Viewing.GuiViewer3D(document.getElementById('viewer3d'), options);
+                //_viewer = new Autodesk.Viewing.Viewer3D(document.getElementById('viewer3d'), {});  // No Navigation control & Environment Light(need _viewer.impl.setLightPreset(1);)
+
+                var startedCode = _viewer.start();
+                if (startedCode > 0) {
+                    console.error('Failed to create a Viewer: WebGL not supported.');
+                    return;
+                }
+
+                console.log('Initialization complete, loading a model next...');
+
+                // Load viewable
+                var documentId = 'urn:' + Autodesk.Viewing.Private.getParameterByName("urn");
+                Autodesk.Viewing.Document.load(documentId, onDocumentLoadSuccess, onDocumentLoadFailure);
+
+            });
+
+            function onDocumentLoadSuccess(viewerDocument) {
+
+                var viewables = viewerDocument.getRoot().search({
+                    'type': 'geometry',
+                    'role': '3d'
+                });
+
+                _viewer.loadDocumentNode(viewerDocument, viewables[0]).then(i => {
+                });
+
+            }
+
+            function onDocumentLoadFailure() {
+                console.error('Failed fetching Forge manifest');
+            }
+        });
+    </script>
+</head>
+<body>
+    <div id="viewer3d"></div>
+</body>
+</html>
